@@ -5,6 +5,7 @@ services:
       dockerfile: app/Dockerfile
     image: url-shortener-api:dev
     container_name: url-shortener-api
+    user: "1000:1000"
     restart: unless-stopped
     env_file:
       - .env

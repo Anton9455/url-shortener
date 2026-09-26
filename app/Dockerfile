@@ -17,6 +17,7 @@ COPY app/ /app/app/
 
 RUN useradd --create-home --uid 1000 app \
     && chown -R app:app /app
+RUN mkdir -p /data && chown app:app /data
 USER app
 
 EXPOSE 8000
