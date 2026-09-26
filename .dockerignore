@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.coverage
+htmlcov
+.env
+data/
+nginx/
+ui/
+tests_integration/
+README.md
+.git/
+.vscode/

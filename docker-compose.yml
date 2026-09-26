@@ -1,0 +1,48 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: url-shortener-api:dev
+    container_name: url-shortener-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////data/shortener.db
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  streamlit:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    image: url-shortener-ui:dev
+    container_name: url-shortener-ui
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/logs:ro
+    depends_on:
+      fastapi:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: url-shortener-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      - fastapi
+      - streamlit
