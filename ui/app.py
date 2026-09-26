@@ -81,11 +81,11 @@ with tab_stats:
 with tab_health:
     st.subheader("Состояние сервиса")
     if st.button("Проверить"):
-    try:
-        r = httpx.get(f"{FASTAPI_URL}/health", timeout=5.0)
-        st.json(r.json())
-    except httpx.RequestError as e:
-        st.error(f"API недоступен: {e}")
+        try:
+            r = httpx.get(f"{FASTAPI_URL}/health", timeout=5.0)
+            st.json(r.json())
+        except httpx.RequestError as e:
+            st.error(f"API недоступен: {e}")
 
 with tab_diag:
     st.subheader("Диагностика системы")
