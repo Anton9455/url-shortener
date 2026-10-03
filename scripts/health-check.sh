@@ -33,11 +33,7 @@ fi
 echo
 
 echo "--- 3. База данных ---"
-if [ -f data/shortener.db ]; then
-    ls -lh data/shortener.db
-else
-    echo "data/shortener.db не найден"
-fi
+docker compose exec -T fastapi ls -lh /data/shortener.db 2>&1 || echo "БД не найдена"
 echo
 
 echo "--- 4. Последние 5 ссылок ---"
