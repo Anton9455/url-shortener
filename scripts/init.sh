@@ -33,33 +33,38 @@ docker compose version >/dev/null 2>&1 || { echo "❌ docker compose не уст
 echo "✓ Окружение: docker + docker compose"
 echo
 
-# --- Защита от повторного запуска ---
-if [ -f .env ]; then
-    echo "❌ .env уже существует."
-    echo
-    echo "Переустановить сервис с нуля:"
-    echo "  docker compose down -v"
-    echo "  rm -f .env nginx/.htpasswd"
-    echo "  bash scripts/init.sh"
-    echo
-    echo "Обновить код без пересоздания:"
-    echo "  git pull && docker compose up -d --build"
-    exit 1
+# --- Предупреждение ---
+echo "⚠ ВНИМАНИЕ"
+echo
+echo "Скрипт разворачивает сервис С НУЛЯ. Если он уже был установлен,"
+echo "все данные будут удалены!"
+read -p "Нажми Enter для продолжения или Ctrl+C для отмены..."
+echo
+
+# --- Очистка предыдущего состояния ---
+echo "→ Очищаю предыдущее состояние (если было)..."
+docker compose down -v 2>/dev/null || true
+rm -f .env nginx/.htpasswd 2>/dev/null || true
+rm -rf logs/ 2>/dev/null || true
+
+# Удалить старую cron-задачу (если была)
+if command -v crontab >/dev/null 2>&1; then
+    crontab -l 2>/dev/null | grep -v "url-shortener-health-check" | crontab - 2>/dev/null || true
 fi
+
+echo "✓ Готово"
+echo
 
 # --- .env ---
 echo "Готовлю .env"
-echo "Внешний URL сервиса — нужен, чтобы UI показывал корректные"
-echo "короткие ссылки. Если сервис доступен снаружи — укажи домен."
+echo "Внешний URL сервиса"
 read -p "URL [Enter = http://localhost]: " USER_URL
 BASE_URL="${USER_URL:-http://localhost}"
 cp .env.example .env
 sed -i "s|^BASE_URL=.*|BASE_URL=$BASE_URL|" .env
 echo
 
-echo "API-токен — секретная строка для доступа к API."
-echo "Клиент передаёт его в заголовке X-API-Token."
-echo "Без него нельзя создавать ссылки и смотреть статистику через API."
+echo "API-токен (передаётся его в заголовке X-API-Token)"
 read -p "Токен [Enter = сгенерировать]: " USER_TOKEN
 
 if [ -z "$USER_TOKEN" ]; then
@@ -81,7 +86,7 @@ echo "✓ .env создан (BASE_URL=$BASE_URL)"
 echo
 
 # --- .htpasswd ---
-echo "Basic Auth — защита веб-интерфейса (вход в браузере)."
+echo "Basic Auth"
 read -p "Логин [admin]: " USER_LOGIN
 USER_LOGIN="${USER_LOGIN:-admin}"
 
@@ -130,27 +135,17 @@ echo
 CRON_STATUS="не настроен"
 echo "Cron — автоматическая диагностика каждые 5 минут."
 echo "Пишет результат в logs/health.log, который читает вкладка"
-echo "«Диагностика» в UI. Для dev-машины обычно не нужен."
+echo "«Диагностика» в UI."
 read -p "Настроить cron? [y/N]: " USER_CRON
 if [[ "${USER_CRON:-}" =~ ^[Yy]$ ]]; then
     if command -v crontab >/dev/null 2>&1; then
         bash scripts/setup-cron.sh && CRON_STATUS="настроен"
     else
-        echo "⚠ crontab не установлен. Установи:"
-        echo "    apt install -y cron && systemctl enable --now cron"
-        echo "  Затем: bash scripts/setup-cron.sh"
+        echo "⚠ crontab не установлен"
         CRON_STATUS="не настроен (нет crontab)"
     fi
 fi
 echo
-
-# --- Проверка API-токена ---
-if grep -q "^API_TOKEN=change-me" .env; then
-    echo "⚠ ВНИМАНИЕ: API_TOKEN оставлен по умолчанию 'change-me'."
-    echo "  API уязвим — кто угодно может создавать ссылки."
-    echo "  Смени в .env и перезапусти: docker compose restart fastapi"
-    echo
-fi
 
 # --- Финальный отчёт ---
 echo "=========================================="
