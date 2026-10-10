@@ -68,3 +68,25 @@ def test_health_does_not_require_token(client):
     """GET /health without X-API-Token header -> 200"""
     response = client.get("/health")
     assert response.status_code == 200
+
+
+def test_version_returns_200(client):
+    """GET /version -> 200."""
+    response = client.get("/version")
+    assert response.status_code == 200
+
+
+def test_version_returns_json_with_version(client):
+    """body содержит version."""
+    response = client.get("/version")
+    body = response.json()
+    assert "version" in body
+    assert isinstance(body["version"], str)
+
+
+def test_version_matches_settings(client):
+    """body["version"] == settings.app_version."""
+    from app.main import settings
+    response = client.get("/version")
+    body = response.json()
+    assert body["version"] == settings.app_version

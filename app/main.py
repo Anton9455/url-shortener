@@ -21,7 +21,7 @@ from app.db import (
     init_db,
 )
 from app.models import Link
-from app.schemas import HealthResponse, LinkItem, ShortenRequest, ShortenResponse, StatsResponse
+from app.schemas import HealthResponse, LinkItem, ShortenRequest, ShortenResponse, StatsResponse, VersionResponse
 
 # --- логирование ---
 if not logging.getLogger("app").handlers:
@@ -100,6 +100,15 @@ def health(db: Session = Depends(get_db)):
         db=db_status,
         version=settings.app_version,
         uptime_sec=int(time.monotonic() - START_TIME),
+    )
+
+
+@app.get("/version", response_model=VersionResponse)
+def get_version():
+    """Версия приложения."""
+    return VersionResponse(
+        version=settings.app_version,
+        service="url-shortener",
     )
 
 

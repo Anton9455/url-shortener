@@ -3,6 +3,12 @@ from datetime import datetime
 from pydantic import BaseModel, HttpUrl
 
 
+class VersionResponse(BaseModel):
+    """Ответ эндпоинта /version."""
+    version: str
+    service: str
+
+
 class HealthResponse(BaseModel):
     """Ответ эндпоинта /health."""
     status: str
