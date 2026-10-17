@@ -81,25 +81,20 @@ with tab_stats:
     if links:
         st.divider()
         if st.button("🗑️ Очистить все ссылки", type="secondary"):
-            if st.session_state.get("confirm_clear"):
-                try:
-                    r = httpx.delete(
-                        f"{FASTAPI_URL}/api/links",
-                        headers=HEADERS,
-                        timeout=10.0,
-                    )
-                    if r.status_code == 200:
-                        deleted = r.json().get("deleted", 0)
-                        st.success(f"Удалено ссылок: {deleted}")
-                        st.session_state["confirm_clear"] = False
-                        st.rerun()
-                    else:
-                        st.error(f"Ошибка {r.status_code}")
-                except httpx.RequestError as e:
-                    st.error(f"Не удалось связаться с API: {e}")
-            else:
-                st.warning("Нажмите ещё раз, чтобы подтвердить удаление ВСЕХ ссылок.")
-                st.session_state["confirm_clear"] = True
+            try:
+                r = httpx.delete(
+                    f"{FASTAPI_URL}/api/links",
+                    headers=HEADERS,
+                    timeout=10.0,
+                )
+                if r.status_code == 200:
+                    deleted = r.json().get("deleted", 0)
+                    st.success(f"Удалено ссылок: {deleted}")
+                    st.rerun()
+                else:
+                    st.error(f"Ошибка {r.status_code}")
+            except httpx.RequestError as e:
+                st.error(f"Не удалось связаться с API: {e}")
 
 with tab_health:
     st.subheader("Состояние сервиса")

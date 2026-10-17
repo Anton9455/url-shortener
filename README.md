@@ -49,8 +49,8 @@
 
     bash scripts/init.sh
 
-Скрипт спросит внешний URL, логин и пароль Basic Auth.
-Остальное (`.env`, API-токен, `.htpasswd`, `logs/`, сборка
+Скрипт спросит внешний URL сервиса.
+Остальное (`.env`, API-токен, `logs/`, сборка
 образов, запуск, cron) — сделает сам.
 
 ### Ручная установка
@@ -61,18 +61,13 @@
        cp .env.example .env
        # отредактировать: API_TOKEN, BASE_URL
 
-2. Создать `.htpasswd` для Basic Auth:
-       docker run --rm httpd:2.4-alpine htpasswd -nbB <login> <password> > nginx/.htpasswd
-
-   Замени `<login>` и `<password>` на свои значения
-
-3. Создать директорию для логов:
+2. Создать директорию для логов:
        mkdir -p logs
 
-4. Запустить стек:
+3. Запустить стек:
        docker compose up -d --build
 
-5. (Опционально) Настроить cron для диагностики:
+4. (Опционально) Настроить cron для диагностики:
        bash scripts/setup-cron.sh
 
 ## Логирование

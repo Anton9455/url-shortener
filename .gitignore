@@ -9,6 +9,5 @@ certbot/
 *.db
 .idea/
 .vscode/
-nginx/.htpasswd
 logs/*
 !logs/.gitkeep

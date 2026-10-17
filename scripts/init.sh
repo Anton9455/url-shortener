@@ -44,7 +44,7 @@ echo
 # --- Очистка предыдущего состояния ---
 echo "→ Очищаю предыдущее состояние (если было)..."
 docker compose down -v 2>/dev/null || true
-rm -f .env nginx/.htpasswd 2>/dev/null || true
+rm -f .env 2>/dev/null || true
 rm -rf logs/ 2>/dev/null || true
 
 # Удалить старую cron-задачу (если была)
@@ -83,24 +83,6 @@ fi
 
 sed -i "s|^API_TOKEN=.*|API_TOKEN=$USER_TOKEN|" .env
 echo "✓ .env создан (BASE_URL=$BASE_URL)"
-echo
-
-# --- .htpasswd ---
-echo "Basic Auth"
-read -p "Логин [admin]: " USER_LOGIN
-USER_LOGIN="${USER_LOGIN:-admin}"
-
-while true; do
-    read -s -p "Пароль (не может быть пустым): " USER_PASS
-    echo
-    if [ -n "$USER_PASS" ]; then
-        break
-    fi
-    echo "  Пароль пустой. Попробуй ещё раз."
-done
-
-docker run --rm httpd:2.4-alpine htpasswd -nbB "$USER_LOGIN" "$USER_PASS" > nginx/.htpasswd
-echo "✓ nginx/.htpasswd создан (логин=$USER_LOGIN)"
 echo
 
 # --- logs/ ---
@@ -155,10 +137,6 @@ echo
 echo "Точка входа:"
 echo "  UI:     $BASE_URL/"
 echo "  Health: $BASE_URL/health"
-echo
-echo "Доступ:"
-echo "  Логин:  $USER_LOGIN"
-echo "  Пароль: $USER_PASS"
 echo
 echo "Статус:"
 echo "  Cron:   $CRON_STATUS"
