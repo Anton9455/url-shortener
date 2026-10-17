@@ -211,6 +211,18 @@ def list_links(
     ]
 
 
+@app.delete("/api/links")
+def delete_all_links(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_token),
+):
+    """Удалить все ссылки из БД."""
+    deleted = db.query(Link).delete()
+    db.commit()
+    logger.info("cleanup: removed ALL %d links", deleted)
+    return {"deleted": deleted}
+
+
 # --- эндпоинты ---
 @app.get("/{code}")
 def redirect_to_original(

@@ -117,3 +117,30 @@ def test_links_returns_only_fresh(client, auth_headers, db_session):
     body = response.json()
     assert len(body) == 3
     assert all(item["code"] != "exp000" for item in body)
+
+
+def test_delete_all_links_requires_token(client):
+    """DELETE /api/links без токена -> 401."""
+    response = client.delete("/api/links")
+    assert response.status_code == 401
+
+
+def test_delete_all_links_removes_everything(client, auth_headers, db_session):
+    """DELETE /api/links удаляет все ссылки."""
+    from app.models import Link
+    from datetime import datetime, timezone
+
+    for i in range(3):
+        db_session.add(Link(
+            code=f"del{i:03d}",
+            original_url=f"https://del{i}.com/",
+            created_at=datetime.now(timezone.utc),
+        ))
+    db_session.commit()
+    assert db_session.query(Link).count() == 3
+
+    response = client.delete("/api/links", headers=auth_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["deleted"] == 3
+    assert db_session.query(Link).count() == 0
