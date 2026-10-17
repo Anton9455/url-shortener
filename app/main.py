@@ -181,13 +181,20 @@ def list_links(
     db: Session = Depends(get_db),
     _: None = Depends(verify_token),
 ):
-    """Список последних ссылок (без истёкших)."""
+    """Список последних ссылок. Истёкшие удаляются при чтении."""
     cutoff = datetime.now(timezone.utc) - timedelta(
         minutes=settings.link_ttl_minutes
     )
+
+    # Удаляем истёкшие ссылки из БД
+    deleted = db.query(Link).filter(Link.created_at < cutoff).delete()
+    if deleted > 0:
+        db.commit()
+        logger.info("cleanup: removed %d expired links", deleted)
+
+    # Возвращаем только свежие
     links = (
         db.query(Link)
-        .filter(Link.created_at >= cutoff)
         .order_by(Link.created_at.desc())
         .limit(limit)
         .all()
