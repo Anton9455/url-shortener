@@ -181,9 +181,13 @@ def list_links(
     db: Session = Depends(get_db),
     _: None = Depends(verify_token),
 ):
-    """Список последних ссылок (по убыванию created_at)."""
+    """Список последних ссылок (без истёкших)."""
+    cutoff = datetime.now(timezone.utc) - timedelta(
+        minutes=settings.link_ttl_minutes
+    )
     links = (
         db.query(Link)
+        .filter(Link.created_at >= cutoff)
         .order_by(Link.created_at.desc())
         .limit(limit)
         .all()

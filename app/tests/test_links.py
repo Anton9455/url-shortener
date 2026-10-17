@@ -44,9 +44,9 @@ def test_links_ordered_by_created_desc(client, auth_headers, db_session):
     """Свежие ссылки — первыми."""
     now = datetime.now(timezone.utc)
     _make_link(db_session, code="old111", url="https://old.com/",
-                created_at=now - timedelta(hours=2))
+                created_at=now - timedelta(minutes=10))
     _make_link(db_session, code="mid222", url="https://mid.com/",
-                created_at=now - timedelta(hours=1))
+                created_at=now - timedelta(minutes=5))
     _make_link(db_session, code="new333", url="https://new.com/",
                 created_at=now)
     response = client.get("/api/links", headers=auth_headers)
@@ -72,3 +72,48 @@ def test_links_limit_default_50(client, auth_headers, db_session):
     response = client.get("/api/links", headers=auth_headers)
     assert response.status_code == 200
     assert len(response.json()) == 50
+
+
+def test_links_excludes_expired(client, auth_headers, db_session):
+    """Истёкшие ссылки не показываются в /api/links."""
+    from datetime import datetime, timedelta, timezone
+    from app.models import Link
+
+    now = datetime.now(timezone.utc)
+    fresh = Link(code="fresh1", original_url="https://fresh.com/",
+                 created_at=now)
+    old = Link(code="old123", original_url="https://old.com/",
+               created_at=now - timedelta(minutes=30))
+    db_session.add_all([fresh, old])
+    db_session.commit()
+
+    response = client.get("/api/links", headers=auth_headers)
+    assert response.status_code == 200
+    codes = [item["code"] for item in response.json()]
+    assert "fresh1" in codes
+    assert "old123" not in codes
+
+
+def test_links_returns_only_fresh(client, auth_headers, db_session):
+    """Все возвращённые ссылки младше TTL."""
+    from datetime import datetime, timedelta, timezone
+    from app.models import Link
+
+    now = datetime.now(timezone.utc)
+    for i in range(3):
+        db_session.add(Link(
+            code=f"new{i:03d}",
+            original_url=f"https://new{i}.com/",
+            created_at=now - timedelta(minutes=i),
+        ))
+    db_session.add(Link(
+        code="exp000",
+        original_url="https://exp.com/",
+        created_at=now - timedelta(minutes=60),
+    ))
+    db_session.commit()
+
+    response = client.get("/api/links", headers=auth_headers)
+    body = response.json()
+    assert len(body) == 3
+    assert all(item["code"] != "exp000" for item in body)
