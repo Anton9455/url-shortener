@@ -27,11 +27,36 @@ check_containers() {
 echo "=== URL Shortener — инициализация ==="
 echo
 
-# --- Проверки окружения ---
-command -v docker >/dev/null 2>&1 || { echo "❌ docker не установлен"; exit 1; }
-docker compose version >/dev/null 2>&1 || { echo "❌ docker compose не установлен"; exit 1; }
-echo "✓ Окружение: docker + docker compose"
-echo
+    if ! command -v docker >/dev/null 2>&1; then
+        echo "❌ docker не установлен."
+        echo "Установи Docker Engine:"
+        echo "  curl -fsSL https://get.docker.com | sh"
+        exit 1
+    fi
+
+    if ! docker compose version >/dev/null 2>&1; then
+        echo "❌ docker compose не установлен."
+        exit 1
+    fi
+
+    # Проверка доступа к Docker-сокету
+    if ! docker info >/dev/null 2>&1; then
+        echo "❌ Нет доступа к Docker."
+        echo
+        echo "Причина: ваш пользователь не входит в группу 'docker'."
+        echo "Docker по умолчанию доступен только root."
+        echo
+        echo "Решение (выполните один раз):"
+        echo "  sudo usermod -aG docker \$USER"
+        echo
+        echo "Затем выйдите из системы и зайдите снова"
+        echo
+        echo "После этого снова запустите: bash scripts/init.sh"
+        exit 1
+    fi
+
+    echo "✓ Окружение: docker + docker compose"
+    echo
 
 # --- Предупреждение ---
 echo "⚠ ВНИМАНИЕ"
